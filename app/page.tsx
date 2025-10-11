@@ -5,7 +5,7 @@ import mapboxgl, { Map } from 'mapbox-gl';
 import axios from 'axios';
 import { Button, Input, Listbox, ListboxItem, Spinner, Tooltip } from '@heroui/react';
 import { LocateFixed } from 'lucide-react';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { signIn, signOut, useSession } from "next-auth/react";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '';
 
@@ -28,6 +28,9 @@ export default function Page() {
   const [results, setResults] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const [locating, setLocating] = useState(false);
+
+  const { data: session,status } = useSession();
+  const isAuthenticated = status === "authenticated";
 
   // ✅ Initialize Mapbox
   useEffect(() => {
@@ -61,7 +64,7 @@ export default function Page() {
       try {
         const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           query
-        )}.json?access_token=${mapboxgl.accessToken}&autocomplete=true&limit=5&types=poi,place,address,neighborhood,region`;
+        )}.json?access_token=${mapboxgl.accessToken}&autocomplete=true&limit=5`;
         const res = await axios.get(url);
         setResults(res.data.features);
       } catch (error) {
@@ -90,6 +93,10 @@ export default function Page() {
 
     setQuery(place.place_name);
     setResults([]);
+
+    // ✅ Blur input to close suggestions immediately
+    const inputElement = document.querySelector<HTMLInputElement>('input[type="text"]');
+    inputElement?.blur();
   };
 
   // 🧭 Locate user and center map
@@ -129,9 +136,25 @@ export default function Page() {
       {/* Header */}
       <div className="p-3 flex justify-between items-center shadow-md bg-white z-20">
         <h1 className="text-lg font-semibold text-gray-800">title</h1>
-        <Button color="primary" variant="flat" size="sm">
-          Sign In
-        </Button>
+        
+        {isAuthenticated ? (
+          <>
+              <p className="text-sm font-medium">
+                Hello, {session?.user?.name || "User"}
+              </p>
+           
+              <Button size="sm" color="danger" variant="ghost" onPress={() => signOut()}>
+                Sign Out
+              </Button>
+          </>
+        ) : (
+          <>
+            <Button size="sm" color="primary" onPress={() => signIn("google")}>
+              Google Login
+            </Button>
+          </>
+        )}
+
       </div>
 
       {/* Search Bar */}
@@ -162,7 +185,7 @@ export default function Page() {
                       </span>
                     </div>
                   </ListboxItem>
-                  ))}
+                ))}
               </Listbox>
             </div>
           )}
@@ -173,7 +196,7 @@ export default function Page() {
       <div ref={mapContainer} className="flex-1" />
 
       {/* 📍 Floating Locate Me Button */}
-      <div className="absolute bottom-28 left-5 z-30">
+      <div className="absolute bottom-34 left-5 z-30">
         <Tooltip content="Locate Me" color="secondary" placement="right">
           <Button
             onPress={() => locateUser()}
