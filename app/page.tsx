@@ -130,6 +130,16 @@ export default function Page() {
       { enableHighAccuracy: true }
     );
   };
+  const handelbooking = () => {
+    if (!isAuthenticated) {
+      alert("Please sign in to book a ride.");
+      return;
+    }
+    else {
+      // redirect to booking page
+      window.location.href = "/booking";
+    }
+  }  
 
   return (
     <div className="flex flex-col h-screen relative">
@@ -223,7 +233,7 @@ export default function Page() {
 
       {/* Footer buttons */}
       <div className="p-4 bg-gray-50 border-t flex flex-col gap-3 sm:flex-row sm:justify-between">
-        <Button fullWidth color="primary" variant="shadow" className="sm:w-auto">
+        <Button fullWidth color="primary" variant="shadow" onPress={handelbooking} className="sm:w-auto">
           Book Ride
         </Button>
         <Button fullWidth color="secondary" variant="flat" className="sm:w-auto">
